@@ -1,164 +1,4 @@
 import numpy as np
-import pandas as pd
-import time
-import csv
-import tensorflow as tf
-import math
-
-# np.random.seed(3)  # reproducible
-
-# data_file = "sim0_cl0_throughputLog.txt"
-# qtable_file = "qtable.txt"
-# N_STATES = 15   # the length of the 1 dimensional world
-# ACTIONS = ['1', '2','3','4','5','6','7','8','9','10']     # available actions
-# EPSILON = 0.8   # greedy police
-# ALPHA = 0.1     # learning rate
-# GAMMA = 0.9    # discount factor
-# MAX_EPISODES = 10000   # maximum episodes
-# FRESH_TIME = 0.01    # fresh time for one move
-# bufferLength = 0 # the client buffer length
-# downloadStart = 0
-# downloadEnd = 0
-# segmentDuration = 1
-
-# SegmentSize_360s_list = []
-# with open("SegmentSize_360s.txt",'r') as SegmentSize_360s_readfile:
-#     n=0
-#     while True:
-#         lines = SegmentSize_360s_readfile.readline() # 整行读取数据
-#         if not lines:
-#             break
-#         i = lines.split()
-#         SegmentSize_360s_list.append([float(x) for x in i])
-#         n = n+1
-# #print(SegmentSize_360s_list)
-# SegmentSize_360s_list = [[float(x) for x in row] for row in SegmentSize_360s_list]
-
-# DlRxPhyStats_time, DlRxPhyStats_tbsize = [], []
-# with open(data_file,'r') as DlRxPhyStats_to_read:
-#     n=0
-#     while True:
-#         lines = DlRxPhyStats_to_read.readline() # 整行读取数据
-#         if not lines:
-#             break
-        
-#         i = lines.split()
-#         DlRxPhyStats_time.append(float(i[0]))
-#         DlRxPhyStats_tbsize.append(float(i[1])*8)
-#         n = n+1
-
-# DlRsrpSinrStats_time, DlRsrpSinrStats_rsrp = [], []
-# with open("DlRsrpSinrStats.txt",'r') as DlRsrpSinrStats_to_read:
-#     n=0
-#     while True:
-#         lines = DlRsrpSinrStats_to_read.readline() # 整行读取数据
-#         if not lines:
-#             break
-#         if n == 0:
-#             pass
-#         else:
-#             i = lines.split()
-#             DlRsrpSinrStats_time.append(float(i[0]))
-#             DlRsrpSinrStats_rsrp.append(float(i[4]))
-#         n = n+1
-
-# DlRsrpSinrStats_rsrp = [10*math.log10(1000*x) for x in DlRsrpSinrStats_rsrp]
-
-# #print(DlRxPhyStats_time)
-
-
-
-
-# def get_env_feedback(S,T,B,SC,A):
-#     # This is how agent will interact with the environment
-#     action = int(A)
-#     segmentSize = SegmentSize_360s_list[action][SC]*segmentDuration*8
-#     downloadStart = DlRxPhyStats_time[T]
-#     downloadEnd = 0
-#     size_sum = 0
-#     T_ = T
-#     B_ = B
-#     R = 0
-#     for data_size in DlRxPhyStats_tbsize[T:]:
-#         if size_sum < segmentSize:
-#             size_sum = size_sum + data_size
-#             T_ = T_ + 1
-#         else:
-#             downloadEnd = DlRxPhyStats_time[T_]
-#             break
-#     interval = 1
-#     rsrp_data = []
-#     start_time = downloadEnd-2
-#     flag = 0
-#     sum_rsrp = 0
-#     count = 0
-#     #print(DlRxPhyStats_time)
-#     for rtime,rsrp in zip(DlRsrpSinrStats_time,DlRsrpSinrStats_rsrp):
-#         if rtime >= start_time and flag < 2:
-#             if rtime < start_time+interval:
-#                 sum_rsrp += rsrp
-#                 count += 1
-#             else:
-#                 flag += 1
-#                 start_time = start_time+interval
-#                 rsrp_data.append(sum_rsrp/count)
-#                 sum_rsrp = 0
-#                 count = 0
-#     S_1 = np.array(rsrp_data)
-    
-#     #print("===============",downloadStart,downloadEnd)
-#     if SC == 0:
-#         B_ = B_ + segmentDuration
-#     else:
-#         B_ = B_ + segmentDuration - (downloadEnd-downloadStart)
-
-#     S_ = np.append(S_1,B_)
-#     if B_ > 1 and B_ < 2 :
-#         if T_ == len(DlRxPhyStats_tbsize):
-#             R = 2
-#             done = True
-#         else:
-#             R = 0
-#             done = False
-#     else:
-#         if SC == 0 and downloadEnd-downloadStart < 3 and downloadEnd-downloadStart > 0.8:
-#             R = 0
-#             done = False
-#         else:
-#             R = -1
-#             done = True
-     
-#     return S_,T_,B_,R,done
-
-
-
-# def update_env(S, episode, step_counter):
-#     # This is how environment be updated
-#     env_list = ['-']*(N_STATES-1) + ['T']   # '---------T' our environment
-#     if S ==  np.array[N_STATES-1,-1]:
-#         interaction = 'Episode %s: total_steps = %s' % (episode+1, step_counter)
-#         print('\r{}'.format(interaction), end='')
-#         time.sleep(2)
-#         print('\r                                ', end='')
-#     else:
-#         env_list[S[0]] = 'o'
-#         interaction = ''.join(env_list)
-#         print('\r{}'.format(interaction), end='')
-#         time.sleep(FRESH_TIME)
-
-# if __name__ == "__main__":
-#     RL = DeepQNetwork(10,3,
-#                       learning_rate=0.001,
-#                       reward_decay=0.9,
-#                       e_greedy=0.9,
-#                       replace_target_iter=200,
-#                       memory_size=1000,
-#                       #output_graph=True
-#                       )
-    
-#     run_maze()
-#     RL.plot_cost()
-
 
 
 SegmentSize_360s_list = []
@@ -207,6 +47,10 @@ class Environment():
         self.tb_count = 0
         self.s = [0,0,0]
 
+        # plot
+        self.plot_buffer_time = [0]
+        self.plot_buffer_data = [0]
+
     def reset(self):
         self.s = np.array([0,0,0]) # [throughput, bitrate, buffer]
 
@@ -215,16 +59,15 @@ class Environment():
         # s = 0
         s_ = self.s
         reward = 0
-        done = True
+        done = False
 
         action = int(action)
         if self.segmentcount < len(self.video_trace[action]):
             segmentSize = self.video_trace[action][self.segmentcount]*self.segmentDuration*8
         else:
             segmentSize = 0
-            
         downloadStart = self.network_trace_time[self.tb_count]
-        downloadEnd = 0
+        downloadEnd = downloadStart
         size_sum = 0
         next_tb_count = self.tb_count
         next_buffer = self.buffer_list[-1]
@@ -236,32 +79,71 @@ class Environment():
             else:
                 downloadEnd = self.network_trace_time[next_tb_count]
                 break
-        
         if self.segmentcount == 0:
             next_buffer += self.segmentDuration
-        else:
-            next_buffer = next_buffer + self.segmentDuration - (downloadEnd-downloadStart)
+            # plot
+            if downloadEnd == downloadStart:
+                pass
+            else:
+                self.plot_buffer_time.append(downloadStart)
+                self.plot_buffer_data.append(0)
+                self.plot_buffer_time.append(downloadEnd)
+                self.plot_buffer_data.append(0)
+                self.plot_buffer_time.append(downloadEnd)
+                self.plot_buffer_data.append(next_buffer)
+            # print("self.segmentcount == 0!!")
+        else: 
+            if next_buffer <= (downloadEnd-downloadStart):
+                self.rebuffer_starttime_list.append(downloadStart + next_buffer)
+                self.rebuffer_endtime_lsit.append(downloadEnd)
+                
+                # plot 
+                if downloadEnd == downloadStart:
+                    pass
+                else:
+                    self.plot_buffer_time.append(downloadStart + next_buffer)
+                    self.plot_buffer_data.append(0)
+                    self.plot_buffer_time.append(downloadEnd)
+                    self.plot_buffer_data.append(0)
+                    self.plot_buffer_time.append(downloadEnd)
+                    self.plot_buffer_data.append(self.segmentDuration)
+                next_buffer = self.segmentDuration
+                # print("rebuff !!")
+            else:
+                if downloadEnd == downloadStart:
+                    pass
+                else:
+                    self.plot_buffer_time.append(downloadEnd)
+                    self.plot_buffer_data.append(next_buffer - (downloadEnd-downloadStart))
+
+                    next_buffer = next_buffer + self.segmentDuration - (downloadEnd-downloadStart)
+                    # plot
+                    self.plot_buffer_time.append(downloadEnd)
+                    self.plot_buffer_data.append(next_buffer)
+                # print("not rebuff !!")
+        
+        
 
         # print("===============",downloadStart,downloadEnd,self.buffer_list[-1],next_buffer)
         
         # self.record(action,next_buffer,segmentSize,downloadEnd-downloadStart,downloadEnd)
 
         
-        if next_buffer > 1 :#and next_buffer < 2 :
-            if next_tb_count == len(DlRxPhyStats_tbsize):
-                reward = 2
-                done = True
-            else:
-                reward = 0
-                done = False
-        else:
-            if self.segmentcount == 0 and downloadEnd-downloadStart < 3 and downloadEnd-downloadStart > 0.8:
-                reward = 0
-                done = False
-            else:
-                reward = -1
-                done = True
-        if segmentSize == 0:
+        # if next_buffer > 1 :#and next_buffer < 2 :
+        #     if next_tb_count == len(DlRxPhyStats_tbsize):
+        #         reward = 2
+        #         done = True
+        #     else:
+        #         reward = 0
+        #         done = False
+        # else:
+        #     if self.segmentcount == 0 and downloadEnd-downloadStart < 3 and downloadEnd-downloadStart > 0.8:
+        #         reward = 0
+        #         done = False
+        #     else:
+        #         reward = -1
+        #         done = True
+        if segmentSize == 0 or next_tb_count >= len(self.network_trace_time):
             done = True
         else:
             self.record(action,next_buffer,segmentSize,downloadEnd-downloadStart,downloadEnd)
@@ -298,15 +180,36 @@ class Environment():
         plt.xlim(0,90)
         handlesa,labelsa = c.get_legend_handles_labels()
         c.legend(handlesa[::-1],labelsa[::-1],fontsize=20)
-        plt.savefig("Throughput.png")
-        # plt.show()
+        # plt.savefig("Throughput.png")
+        plt.show()
+
+    def buffer_plot(self):
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(40,24))
+        c = plt.subplot(111)
+        c1 = c.plot(self.plot_buffer_time[:-1], self.plot_buffer_data[:-1],'r-',label = 'Buffer',linewidth=2.0)
+        plt.grid(True)
+        plt.xlabel("Time/s",fontsize=20)
+        plt.ylabel("Buffer/s",fontsize=20)
+        plt.xticks(fontsize=20)
+        plt.yticks(fontsize=20)
+        plt.ylim(0,15)
+        plt.xlim(0,90)
+        handlesa,labelsa = c.get_legend_handles_labels()
+        c.legend(handlesa[::-1],labelsa[::-1],fontsize=20)
+        # plt.savefig("Throughput.png")
+        plt.show()
 
 if __name__ == "__main__":
     env = Environment()
-    action = 0
+    action = 6
     s_, reward, done = env.step(action)
     while not done:
-        print(done)
+        # print(done)
         s_, reward, done = env.step(action)
         # print(s_, reward, done)
-    env.th_plot()
+    # env.th_plot()
+    env.buffer_plot()
+    # print(env.plot_buffer_time)
+    # print(env.plot_buffer_data)
+    # print(env.segment_dltime_list)
