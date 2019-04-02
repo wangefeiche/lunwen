@@ -45,14 +45,16 @@ class Environment():
         self.rebuffer_starttime_list = []
         self.rebuffer_endtime_lsit = []
         self.tb_count = 0
-        self.s = [0,0,0]
+        self.s = np.array([0.,0.,0.])
 
         # plot
         self.plot_buffer_time = [0]
         self.plot_buffer_data = [0]
 
     def reset(self):
-        self.s = np.array([0,0,0]) # [throughput, bitrate, buffer]
+        origin = np.array([0.,0.,0.]) # [throughput, bitrate, buffer]
+
+        return origin
 
 
     def step(self, action):
@@ -159,18 +161,57 @@ class Environment():
         return s_, reward, done
 
     def record(self, bitrate, buffer, segmentsize, downloadtime, downloadEnd):
-        self.bitrate_record.append(bitrate)
+        self.bitrate_record.append((bitrate+1)*1e7)
         self.buffer_list.append(buffer)
         self.segmentsize_list.append(segmentsize)
         self.segment_dltime_list.append(downloadtime)
         self.th_endtime.append(downloadEnd)
 
     def th_plot(self):
+        data_size,data_time = [],[]
+        th_size, th_time = [],[]
+        interval = 0.5 #10*1000
+        segmentstart = 0
+        timetemp = 0
+        #--------------------------------------------------
+        with open("sim0_cl0_throughputLog.txt", 'r') as phyrate_to_read:
+            n=0
+            while True:
+                lines = phyrate_to_read.readline() 
+                if not lines:
+                    break   
+                i = lines.split()
+                temp_time = float(i[0])
+                # print(i,temp_time,segmentstart,data_time)
+                if temp_time <= segmentstart + interval:
+                    data_size.append(float(i[1]))
+                    data_time.append(float(i[0]))
+                else:
+                    segmentstart = temp_time
+                    if len(data_size) == 0 or (data_time[-1]-data_time[0]) == 0:
+                        th_size.append(0)
+                        th_time.append(temp_time)
+                    else:
+                        th_size.append(sum(data_size)*8/(data_time[-1]-data_time[0]))
+                        th_time.append(sum(data_time)/len(data_time))
+                    data_size, data_time = [], []
+                    
+                n = n+1
+
+
+        plot_bitrate, plot_bitrate_time = [0,0], [0,self.th_endtime[0] - self.segment_dltime_list[0]]
         th = [i/j for i,j in zip(self.segmentsize_list, self.segment_dltime_list)]
+        for i in range(len(self.bitrate_record)):
+            plot_bitrate_time.append(self.th_endtime[i] - self.segment_dltime_list[i])
+            plot_bitrate_time.append(self.th_endtime[i])
+            plot_bitrate.append(self.bitrate_record[i])
+            plot_bitrate.append(self.bitrate_record[i])
         import matplotlib.pyplot as plt
         plt.figure(figsize=(40,24))
         c = plt.subplot(111)
         c1 = c.plot(self.th_endtime, th,'r-',label = 'Throughput',linewidth=2.0)
+        c2 = c.plot(plot_bitrate_time, plot_bitrate,'g-',label = 'Bitrate',linewidth=2.0)
+        c3 = c.plot(th_time,th_size,'b-',label = 'sim-Throughput',linewidth=2.0)
         plt.grid(True)
         plt.xlabel("Time/s",fontsize=20)
         plt.ylabel("Bitrate/100Mbps",fontsize=20)
@@ -180,8 +221,8 @@ class Environment():
         plt.xlim(0,90)
         handlesa,labelsa = c.get_legend_handles_labels()
         c.legend(handlesa[::-1],labelsa[::-1],fontsize=20)
-        # plt.savefig("Throughput.png")
-        plt.show()
+        plt.savefig("Throughput.png")
+        # plt.show()
 
     def buffer_plot(self):
         import matplotlib.pyplot as plt
@@ -197,8 +238,8 @@ class Environment():
         plt.xlim(0,90)
         handlesa,labelsa = c.get_legend_handles_labels()
         c.legend(handlesa[::-1],labelsa[::-1],fontsize=20)
-        # plt.savefig("Throughput.png")
-        plt.show()
+        plt.savefig("buffer.png")
+        # plt.show()
 
 if __name__ == "__main__":
     env = Environment()
@@ -209,7 +250,7 @@ if __name__ == "__main__":
         s_, reward, done = env.step(action)
         # print(s_, reward, done)
     # env.th_plot()
-    env.buffer_plot()
+    # env.buffer_plot()
     # print(env.plot_buffer_time)
     # print(env.plot_buffer_data)
     # print(env.segment_dltime_list)
