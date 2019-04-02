@@ -198,17 +198,18 @@ class Environment():
         self.network_trace_size = DlRxPhyStats_tbsize
         self.video_trace = SegmentSize_360s_list
         self.bitrate_record = []
+        self.segmentsize_list = []
         self.segment_dltime_list = []
         self.buffer_list = [0]
+        self.th_endtime = []
         self.rebuffer_starttime_list = []
         self.rebuffer_endtime_lsit = []
         self.tb_count = 0
-        self.s = 0
+        self.s = [0,0,0]
 
     def reset(self):
-        origin = np.array([0,0,0])
+        self.s = np.array([0,0,0]) # [throughput, bitrate, buffer]
 
-        return origin
 
     def step(self, action):
         # s = 0
@@ -217,7 +218,11 @@ class Environment():
         done = True
 
         action = int(action)
-        segmentSize = self.video_trace[action][self.segmentcount]*self.segmentDuration*8
+        if self.segmentcount < len(self.video_trace[action]):
+            segmentSize = self.video_trace[action][self.segmentcount]*self.segmentDuration*8
+        else:
+            segmentSize = 0
+            
         downloadStart = self.network_trace_time[self.tb_count]
         downloadEnd = 0
         size_sum = 0
@@ -232,16 +237,17 @@ class Environment():
                 downloadEnd = self.network_trace_time[next_tb_count]
                 break
         
-        
-        
-        #print("===============",downloadStart,downloadEnd)
         if self.segmentcount == 0:
             next_buffer += self.segmentDuration
         else:
             next_buffer = next_buffer + self.segmentDuration - (downloadEnd-downloadStart)
 
-        s_ = np.append(action,next_buffer)
-        if next_buffer > 1 and next_buffer < 2 :
+        # print("===============",downloadStart,downloadEnd,self.buffer_list[-1],next_buffer)
+        
+        # self.record(action,next_buffer,segmentSize,downloadEnd-downloadStart,downloadEnd)
+
+        
+        if next_buffer > 1 :#and next_buffer < 2 :
             if next_tb_count == len(DlRxPhyStats_tbsize):
                 reward = 2
                 done = True
@@ -255,21 +261,52 @@ class Environment():
             else:
                 reward = -1
                 done = True
-
+        if segmentSize == 0:
+            done = True
+        else:
+            self.record(action,next_buffer,segmentSize,downloadEnd-downloadStart,downloadEnd)
+            
+        s_[0] = self.segmentsize_list[-1]/self.segment_dltime_list[-1]
+        s_[1] = (action + 1)*1e7
+        s_[2] = next_buffer
+        self.segmentcount += 1
         self.s = s_
         self.tb_count = next_tb_count
 
 
         return s_, reward, done
 
-    def record(self):
-        # self.bitrate_record.append()
-        pass
+    def record(self, bitrate, buffer, segmentsize, downloadtime, downloadEnd):
+        self.bitrate_record.append(bitrate)
+        self.buffer_list.append(buffer)
+        self.segmentsize_list.append(segmentsize)
+        self.segment_dltime_list.append(downloadtime)
+        self.th_endtime.append(downloadEnd)
+
+    def th_plot(self):
+        th = [i/j for i,j in zip(self.segmentsize_list, self.segment_dltime_list)]
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(40,24))
+        c = plt.subplot(111)
+        c1 = c.plot(self.th_endtime, th,'r-',label = 'Throughput',linewidth=2.0)
+        plt.grid(True)
+        plt.xlabel("Time/s",fontsize=20)
+        plt.ylabel("Bitrate/100Mbps",fontsize=20)
+        plt.xticks(fontsize=20)
+        plt.yticks(fontsize=20)
+        plt.ylim(0,150000000)
+        plt.xlim(0,90)
+        handlesa,labelsa = c.get_legend_handles_labels()
+        c.legend(handlesa[::-1],labelsa[::-1],fontsize=20)
+        plt.savefig("Throughput.png")
+        # plt.show()
 
 if __name__ == "__main__":
     env = Environment()
     action = 0
-    for i in range(10):
+    s_, reward, done = env.step(action)
+    while not done:
+        print(done)
         s_, reward, done = env.step(action)
-        print(s_, reward, done)
-    
+        # print(s_, reward, done)
+    env.th_plot()
