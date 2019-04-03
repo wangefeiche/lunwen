@@ -1,5 +1,6 @@
 import numpy as np
 
+REBUFF_PENALTY = 4.3
 
 SegmentSize_360s_list = []
 with open("SegmentSize_360s.txt",'r') as SegmentSize_360s_readfile:
@@ -44,9 +45,12 @@ class Environment():
         self.th_endtime = []
         self.rebuffer_starttime_list = []
         self.rebuffer_endtime_lsit = []
+        self.reward_record = []
         self.tb_count = 0
         self.s = np.array([0.,0.,0.])
 
+        # log 
+        self.log_data = [["segment_count", "dl_start", "dl_end", "rebuff_time", "end_buffer", "bitrate", "reward"]]
         # plot
         self.plot_buffer_time = [0]
         self.plot_buffer_data = [0]
@@ -62,7 +66,7 @@ class Environment():
         s_ = self.s
         reward = 0
         done = False
-
+        rebuffer_time = 0
         action = int(action)
         if self.segmentcount < len(self.video_trace[action]):
             segmentSize = self.video_trace[action][self.segmentcount]*self.segmentDuration*8
@@ -98,7 +102,7 @@ class Environment():
             if next_buffer <= (downloadEnd-downloadStart):
                 self.rebuffer_starttime_list.append(downloadStart + next_buffer)
                 self.rebuffer_endtime_lsit.append(downloadEnd)
-                
+                rebuffer_time = downloadEnd-downloadStart - next_buffer 
                 # plot 
                 if downloadEnd == downloadStart:
                     pass
@@ -123,14 +127,17 @@ class Environment():
                     self.plot_buffer_time.append(downloadEnd)
                     self.plot_buffer_data.append(next_buffer)
                 # print("not rebuff !!")
-        
-        
+        if self.segmentcount == 0:
+            segment_reward = action + 1 - REBUFF_PENALTY * rebuffer_time 
+        else:
+            segment_reward = action + 1 - REBUFF_PENALTY * rebuffer_time  - abs(action + 1 - self.bitrate_record[-1]/1e7)
+        self.reward_record.append(segment_reward)
 
         # print("===============",downloadStart,downloadEnd,self.buffer_list[-1],next_buffer)
         
         # self.record(action,next_buffer,segmentSize,downloadEnd-downloadStart,downloadEnd)
 
-        
+        self.log_data.append([self.segmentcount, downloadStart, downloadEnd, rebuffer_time, next_buffer, action, segment_reward])
         # if next_buffer > 1 :#and next_buffer < 2 :
         #     if next_tb_count == len(DlRxPhyStats_tbsize):
         #         reward = 2
@@ -156,7 +163,6 @@ class Environment():
         self.segmentcount += 1
         self.s = s_
         self.tb_count = next_tb_count
-
 
         return s_, reward, done
 
@@ -241,6 +247,13 @@ class Environment():
         plt.savefig("buffer.png")
         # plt.show()
 
+    def log_output(self):
+        import csv
+        with open('log_output.csv', 'w', newline='') as f:  
+            writer = csv.writer(f)
+            writer.writerows(self.log_data)
+        print("final qoe: ", sum(self.reward_record))
+
 if __name__ == "__main__":
     env = Environment()
     action = 6
@@ -254,3 +267,4 @@ if __name__ == "__main__":
     # print(env.plot_buffer_time)
     # print(env.plot_buffer_data)
     # print(env.segment_dltime_list)
+    # env.log_output()

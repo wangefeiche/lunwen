@@ -10,8 +10,8 @@ def Test():
     while not done:
         # choose action
         # print(segmentcount, observation)
-
-        bitrate = Tomato(observation[0], observation[1], observation[2])
+        bitrate = 6
+        # bitrate = Tomato(observation[0], observation[1], observation[2])
         
         observation_, reward, done = env.step(bitrate)
 
@@ -20,8 +20,10 @@ def Test():
         segmentcount += 1
 
     # print(env.bitrate_record)
-    env.th_plot()
-    env.buffer_plot()
+    # env.th_plot()
+    # env.buffer_plot()
+    env.log_output()
+    # print(env.reward_record)
 
 if __name__ == "__main__":
     Test()
