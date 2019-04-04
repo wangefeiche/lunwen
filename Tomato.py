@@ -34,7 +34,7 @@ def Tomato(throughput, last_bitrate, buffer):
     if bitrate < 0:
         bitrate = 0
     elif bitrate > n_actions-1:
-        bitrate = n_actions
+        bitrate = n_actions - 1
     
 
     return bitrate

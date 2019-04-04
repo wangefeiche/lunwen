@@ -1,7 +1,10 @@
 import numpy as np
+import math
 
-REBUFF_PENALTY = 4.3
-
+REBUFF_PENALTY = 8
+SMOOTH_PENALTY = 0.005
+MAX_SEGMENT_COUNT = 100
+throughput_file = "sim6_cl0_throughputLog.txt"
 SegmentSize_360s_list = []
 with open("SegmentSize_360s.txt",'r') as SegmentSize_360s_readfile:
     n=0
@@ -16,7 +19,7 @@ with open("SegmentSize_360s.txt",'r') as SegmentSize_360s_readfile:
 SegmentSize_360s_list = [[float(x) for x in row] for row in SegmentSize_360s_list]
 
 DlRxPhyStats_time, DlRxPhyStats_tbsize = [], []
-with open("sim0_cl0_throughputLog.txt",'r') as DlRxPhyStats_to_read:
+with open(throughput_file,'r') as DlRxPhyStats_to_read:
     n=0
     while True:
         lines = DlRxPhyStats_to_read.readline() # 整行读取数据
@@ -68,7 +71,7 @@ class Environment():
         done = False
         rebuffer_time = 0
         action = int(action)
-        if self.segmentcount < len(self.video_trace[action]):
+        if self.segmentcount < len(self.video_trace[action]) and self.segmentcount < MAX_SEGMENT_COUNT-1:
             segmentSize = self.video_trace[action][self.segmentcount]*self.segmentDuration*8
         else:
             segmentSize = 0
@@ -128,9 +131,9 @@ class Environment():
                     self.plot_buffer_data.append(next_buffer)
                 # print("not rebuff !!")
         if self.segmentcount == 0:
-            segment_reward = action + 1 - REBUFF_PENALTY * rebuffer_time 
+            segment_reward = math.log10(action + 1) - REBUFF_PENALTY * rebuffer_time 
         else:
-            segment_reward = action + 1 - REBUFF_PENALTY * rebuffer_time  - abs(action + 1 - self.bitrate_record[-1]/1e7)
+            segment_reward = math.log10(action + 1) - REBUFF_PENALTY * rebuffer_time  - SMOOTH_PENALTY * abs(action + 1 - self.bitrate_record[-1]/1e7)
         self.reward_record.append(segment_reward)
 
         # print("===============",downloadStart,downloadEnd,self.buffer_list[-1],next_buffer)
@@ -152,6 +155,8 @@ class Environment():
         #     else:
         #         reward = -1
         #         done = True
+        reward = segment_reward
+
         if segmentSize == 0 or next_tb_count >= len(self.network_trace_time):
             done = True
         else:
@@ -180,7 +185,7 @@ class Environment():
         segmentstart = 0
         timetemp = 0
         #--------------------------------------------------
-        with open("sim0_cl0_throughputLog.txt", 'r') as phyrate_to_read:
+        with open(throughput_file, 'r') as phyrate_to_read:
             n=0
             while True:
                 lines = phyrate_to_read.readline() 
@@ -224,7 +229,7 @@ class Environment():
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
         plt.ylim(0,150000000)
-        plt.xlim(0,90)
+        plt.xlim(0,200)
         handlesa,labelsa = c.get_legend_handles_labels()
         c.legend(handlesa[::-1],labelsa[::-1],fontsize=20)
         plt.savefig("Throughput.png")
@@ -241,7 +246,7 @@ class Environment():
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
         plt.ylim(0,15)
-        plt.xlim(0,90)
+        plt.xlim(0,200)
         handlesa,labelsa = c.get_legend_handles_labels()
         c.legend(handlesa[::-1],labelsa[::-1],fontsize=20)
         plt.savefig("buffer.png")
@@ -253,6 +258,8 @@ class Environment():
             writer = csv.writer(f)
             writer.writerows(self.log_data)
         print("final qoe: ", sum(self.reward_record))
+        print("played segment number: ", len(self.reward_record))
+        print("average qoe: ", sum(self.reward_record)/len(self.reward_record))
 
 if __name__ == "__main__":
     env = Environment()
