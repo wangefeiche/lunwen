@@ -20,15 +20,33 @@ class Actor(object):
         with tf.variable_scope('Actor'):
             l1 = tf.layers.dense(
                 inputs=self.s,
-                units=20,    # number of hidden units
+                units=16,    # number of hidden units
                 activation=tf.nn.relu,
                 kernel_initializer=w_initializer,    # weights
                 bias_initializer=b_initializer,  # biases
                 name='l1'
             )
 
-            self.acts_prob = tf.layers.dense(
+            l2 = tf.layers.dense(
                 inputs=l1,
+                units=32,    # number of hidden units
+                activation=tf.nn.relu,
+                kernel_initializer=w_initializer,    # weights
+                bias_initializer=b_initializer,  # biases
+                name='l2'
+            )
+
+            l3 = tf.layers.dense(
+                inputs=l2,
+                units=64,    # number of hidden units
+                activation=tf.nn.relu,
+                kernel_initializer=w_initializer,    # weights
+                bias_initializer=b_initializer,  # biases
+                name='l3'
+            )
+
+            self.acts_prob = tf.layers.dense(
+                inputs=l3,
                 units=n_actions,    # output units
                 activation=tf.nn.softmax,   # get action probabilities
                 kernel_initializer=w_initializer,  # weights
@@ -66,13 +84,31 @@ class Critic(object):
         with tf.variable_scope('Critic'):
             l1 = tf.layers.dense(
                 inputs=self.s,
-                units=20,  # number of hidden units
+                units=16,  # number of hidden units
                 activation=tf.nn.relu,  # None
                 # have to be linear to make sure the convergence of actor.
                 # But linear approximator seems hardly learns the correct Q.
                 kernel_initializer=w_initializer,  # weights
                 bias_initializer=b_initializer,  # biases
                 name='l1'
+            )
+
+            l2 = tf.layers.dense(
+                inputs=l1,
+                units=32,    # number of hidden units
+                activation=tf.nn.relu,
+                kernel_initializer=w_initializer,    # weights
+                bias_initializer=b_initializer,  # biases
+                name='l2'
+            )
+
+            l3 = tf.layers.dense(
+                inputs=l2,
+                units=64,    # number of hidden units
+                activation=tf.nn.relu,
+                kernel_initializer=w_initializer,    # weights
+                bias_initializer=b_initializer,  # biases
+                name='l3'
             )
 
             self.v = tf.layers.dense(

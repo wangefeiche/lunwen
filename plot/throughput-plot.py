@@ -5,7 +5,7 @@ import fileinput
 import matplotlib.pyplot as plt
 import random
 
-phyrate_file = "sim0_cl0_throughputLog.txt"
+phyrate_file = "sim6_cl0_throughputLog.txt"
 
 data_size,data_time = [],[]
 th_size, th_time = [],[]
@@ -50,8 +50,8 @@ plt.ylabel("Bitrate/100Mbps",fontsize=20)
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)
 plt.ylim(0,150000000)
-plt.xlim(0,90)
+plt.xlim(0,300)
 handlesa,labelsa = c.get_legend_handles_labels()
 c.legend(handlesa[::-1],labelsa[::-1],fontsize=20)
-# plt.savefig("sim-Throughput.png")
-plt.show()
+plt.savefig("sim-Throughput.png")
+# plt.show()

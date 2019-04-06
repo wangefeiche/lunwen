@@ -3,7 +3,7 @@ import math
 
 REBUFF_PENALTY = 8
 SMOOTH_PENALTY = 0.005
-MAX_SEGMENT_COUNT = 100
+MAX_SEGMENT_COUNT = 200
 throughput_file = "sim6_cl0_throughputLog.txt"
 SegmentSize_360s_list = []
 with open("SegmentSize_360s.txt",'r') as SegmentSize_360s_readfile:
@@ -134,6 +134,7 @@ class Environment():
             segment_reward = math.log10(action + 1) - REBUFF_PENALTY * rebuffer_time 
         else:
             segment_reward = math.log10(action + 1) - REBUFF_PENALTY * rebuffer_time  - SMOOTH_PENALTY * abs(action + 1 - self.bitrate_record[-1]/1e7)
+        segment_reward -= 10
         self.reward_record.append(segment_reward)
 
         # print("===============",downloadStart,downloadEnd,self.buffer_list[-1],next_buffer)

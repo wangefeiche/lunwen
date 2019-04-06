@@ -6,12 +6,12 @@ from ActorCritic import Actor, Critic
 tf.set_random_seed(2)  # reproducible
 # Superparameters
 OUTPUT_GRAPH = False
-MAX_EPISODE = 100
+MAX_EPISODE = 1000
 DISPLAY_REWARD_THRESHOLD = 200  # renders environment if total episode reward is greater then this threshold
 MAX_EP_STEPS = 1000   # maximum time step in one episode
 RENDER = False  # rendering wastes time
 GAMMA = 0.9     # reward discount in TD error
-LR_A = 0.001    # learning rate for actor
+LR_A = 0.01    # learning rate for actor
 LR_C = 0.01     # learning rate for critic
 
 env = Environment()
