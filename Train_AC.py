@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from Environment import Environment
 from ActorCritic import Actor, Critic
+from PolicyGradient import PolicyGradient
 
 tf.set_random_seed(2)  # reproducible
 # Superparameters
