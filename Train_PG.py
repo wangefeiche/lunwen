@@ -20,7 +20,7 @@ RL = PolicyGradient(
     output_graph=False,
 )
 
-for i_episode in range(3000):
+for i_episode in range(100):
     env.__init__()
     observation = env.reset()
 

@@ -59,7 +59,7 @@ class Environment():
         self.plot_buffer_data = [0]
 
     def reset(self):
-        origin = np.array([1.05e7,1.0e7,1]) # [throughput, bitrate, buffer]
+        origin = np.array([1.05,1.0,1.]) # [throughput, bitrate, buffer]
 
         return origin
 
@@ -163,8 +163,8 @@ class Environment():
         else:
             self.record(action,next_buffer,segmentSize,downloadEnd-downloadStart,downloadEnd)
             
-        s_[0] = self.segmentsize_list[-1]/self.segment_dltime_list[-1]
-        s_[1] = (action + 1)*1e7
+        s_[0] = self.segmentsize_list[-1]/self.segment_dltime_list[-1]/1e7
+        s_[1] = (action + 1)
         s_[2] = next_buffer
         self.segmentcount += 1
         self.s = s_
