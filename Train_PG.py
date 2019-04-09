@@ -17,7 +17,7 @@ RL = PolicyGradient(
     n_features=env.n_features,
     learning_rate=0.001,
     reward_decay=0.99,
-    output_graph=False,
+    output_graph=True,
 )
 
 for i_episode in range(100):
@@ -47,6 +47,7 @@ for i_episode in range(100):
             break
 
         observation = observation_
-    env.th_plot()
-    env.buffer_plot()
+    
     env.log_output()
+env.th_plot()
+env.buffer_plot()
