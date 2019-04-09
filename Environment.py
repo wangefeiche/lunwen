@@ -59,7 +59,7 @@ class Environment():
         self.plot_buffer_data = [0]
 
     def reset(self):
-        origin = np.array([0.,0.,0.]) # [throughput, bitrate, buffer]
+        origin = np.array([1.05e7,1.0e7,1]) # [throughput, bitrate, buffer]
 
         return origin
 

@@ -41,13 +41,49 @@ class PolicyGradient:
         self.sess.run(tf.global_variables_initializer())
         # self.saver.restore(self.sess, "model/DQN_model.ckpt")
 
+
+    def get_weight(self, shape,lamda):
+    
+        var = tf.Variable(tf.random_normal(shape=shape),dtype=tf.float32)
+    
+        tf.add_to_collection("losses",tf.contrib.layers.l2_regularizer(lamda)(var))
+
+        return var
+
+
+
     def _build_net(self):
         with tf.name_scope('inputs'):
             self.tf_obs = tf.placeholder(tf.float32, [None, self.n_features], name="observations")
             self.tf_acts = tf.placeholder(tf.int32, [None, ], name="actions_num")
             self.tf_vt = tf.placeholder(tf.float32, [None, ], name="actions_value")
+        with tf.variable_scope('eval_net'):
+            layer_dimension = [self.n_features,64,128,256,self.n_actions]
 
-        w_initializer, b_initializer = tf.random_normal_initializer(0., 0.01), tf.constant_initializer(0.01)
+            n_layers = len(layer_dimension)
+
+            cur_layer = self.tf_obs
+            
+            in_dimension = layer_dimension[0]
+            
+            for i in range(1,n_layers):
+                
+                out_dimension = layer_dimension[i]
+                
+                weight = self.get_weight([in_dimension,out_dimension],0.001)
+                
+                bias = tf.Variable(tf.constant(0.1,shape=[out_dimension]))
+                
+                cur_layer = tf.nn.relu(tf.matmul(cur_layer,weight) + bias)
+
+                # if i == 1:
+                #     self.test_var = bias
+                
+                in_dimension = layer_dimension[i]
+
+            self.all_act_prob = tf.nn.softmax(cur_layer, name='act_prob')
+
+        """ w_initializer, b_initializer = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
         with tf.variable_scope('eval_net'):
             # e_ue_1 = tf.layers.dense(self.tf_obs, 256, tf.nn.relu, kernel_initializer=w_initializer,
             #                      bias_initializer=b_initializer, name='e_ue_1')
@@ -68,14 +104,16 @@ class PolicyGradient:
             all_act = tf.layers.dense(e_3, self.n_actions, kernel_initializer=w_initializer,
                                           bias_initializer=b_initializer, name='q_eval')
             all_act_prob = tf.nn.softmax(all_act, name='act_prob')
-            
-            self.all_act_prob = all_act_prob
+            self.all_act = e_1
+            self.all_act_prob = all_act_prob """
         
 
         with tf.name_scope('loss'):
             # to maximize total reward (log_p * R) is to minimize -(log_p * R), and the tf only have minimize(loss)
-            neg_log_prob = tf.reduce_sum(-tf.log(self.all_act_prob)*tf.one_hot(self.tf_acts, self.n_actions), axis=1)
-            loss = tf.reduce_mean(neg_log_prob * self.tf_vt)  # reward guided loss
+            neg_log_prob = tf.reduce_sum(-tf.log(self.all_act_prob + 1e-10)*tf.one_hot(self.tf_acts, self.n_actions), axis=1)
+            c_loss = tf.reduce_mean(neg_log_prob * self.tf_vt)  # reward guided loss
+            tf.add_to_collection("losses",c_loss)
+            loss = tf.add_n(tf.get_collection("losses"))
             self.loss = loss
             tf.summary.scalar('loss', self.loss)
 
@@ -84,7 +122,9 @@ class PolicyGradient:
 
     def choose_action(self, observation):
         prob_weights = self.sess.run(self.all_act_prob, feed_dict={self.tf_obs: observation[np.newaxis, :]})
+        # print(test_var)
         action = np.random.choice(range(prob_weights.shape[1]), p=prob_weights.ravel())  # select action w.r.t the actions prob
+        # print(observation, action)
         return action
 
     def store_transition(self, s, a, r):
@@ -102,7 +142,7 @@ class PolicyGradient:
              self.tf_acts: np.array(self.ep_as),  # shape=[None, action_length]
              self.tf_vt: discounted_ep_rs_norm,  # shape=[None, ]
         })
-
+        
         self.ep_obs, self.ep_as, self.ep_rs = [], [], []    # empty episode data
         if self.output_graph:
             self.writer.add_summary(summary, self.learn_step_counter)
@@ -116,7 +156,7 @@ class PolicyGradient:
         for t in reversed(range(0, len(self.ep_rs))):
             running_add = running_add * self.gamma + self.ep_rs[t]
             discounted_ep_rs[t] = running_add
-        print(discounted_ep_rs)
+        # print(discounted_ep_rs)
         # normalize episode rewards
         if len(self.ep_rs) > 1:
             discounted_ep_rs -= np.mean(discounted_ep_rs)

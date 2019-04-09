@@ -15,7 +15,7 @@ env = Environment()
 RL = PolicyGradient(
     n_actions=env.n_actions,
     n_features=env.n_features,
-    learning_rate=0.0001,
+    learning_rate=0.001,
     reward_decay=0.99,
     output_graph=False,
 )
