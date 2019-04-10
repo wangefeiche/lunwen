@@ -3,6 +3,8 @@ import numpy as np
 n_actions = 10
 
 def Tomato(throughput, last_bitrate, buffer):
+    throughput = throughput*1e7
+    last_bitrate = last_bitrate*1e7
     if throughput < 1e7:
         bitrate = 0
     elif throughput < 2e7:

@@ -23,6 +23,7 @@ def Test():
     env.th_plot()
     env.buffer_plot()
     env.log_output()
+    print([i/1e7 for i in env.bitrate_record])
     # print(env.reward_record)
 
 if __name__ == "__main__":

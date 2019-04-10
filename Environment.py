@@ -3,7 +3,7 @@ import math
 
 REBUFF_PENALTY = 2.66
 SMOOTH_PENALTY = 0.005
-MAX_SEGMENT_COUNT = 50
+MAX_SEGMENT_COUNT = 30
 throughput_file = "sim6_cl0_throughputLog.txt"
 SegmentSize_360s_list = []
 with open("SegmentSize_360s.txt",'r') as SegmentSize_360s_readfile:
@@ -230,7 +230,7 @@ class Environment():
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
         plt.ylim(0,150000000)
-        plt.xlim(0,200)
+        plt.xlim(0,50)
         handlesa,labelsa = c.get_legend_handles_labels()
         c.legend(handlesa[::-1],labelsa[::-1],fontsize=20)
         plt.savefig("Throughput.png")
@@ -246,8 +246,8 @@ class Environment():
         plt.ylabel("Buffer/s",fontsize=20)
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
-        plt.ylim(0,15)
-        plt.xlim(0,200)
+        plt.ylim(0,5)
+        plt.xlim(0,50)
         handlesa,labelsa = c.get_legend_handles_labels()
         c.legend(handlesa[::-1],labelsa[::-1],fontsize=20)
         plt.savefig("buffer.png")

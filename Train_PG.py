@@ -49,5 +49,6 @@ for i_episode in range(100):
         observation = observation_
     
     env.log_output()
+    print([i/1e7 for i in env.bitrate_record])
 env.th_plot()
 env.buffer_plot()

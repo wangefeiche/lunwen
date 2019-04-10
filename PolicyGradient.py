@@ -135,7 +135,7 @@ class PolicyGradient:
     def learn(self):
         # discount and normalize episode reward
         discounted_ep_rs_norm = self._discount_and_norm_rewards()
-
+        # print(discounted_ep_rs_norm)
         # train on episode
         _, summary = self.sess.run([self.train_op, self.merge], feed_dict={
              self.tf_obs: np.vstack(self.ep_obs),  # shape=[None, n_obs]
