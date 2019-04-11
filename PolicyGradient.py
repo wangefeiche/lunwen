@@ -57,7 +57,7 @@ class PolicyGradient:
             self.tf_obs = tf.placeholder(tf.float32, [None, self.n_features], name="observations")
             self.tf_acts = tf.placeholder(tf.int32, [None, ], name="actions_num")
             self.tf_vt = tf.placeholder(tf.float32, [None, ], name="actions_value")
-        with tf.variable_scope('eval_net'):
+        """ with tf.variable_scope('eval_net'):
             layer_dimension = [self.n_features,64,128,256,self.n_actions]
 
             n_layers = len(layer_dimension)
@@ -81,9 +81,9 @@ class PolicyGradient:
                 
                 in_dimension = layer_dimension[i]
 
-            self.all_act_prob = tf.nn.softmax(cur_layer, name='act_prob')
+            self.all_act_prob = tf.nn.softmax(cur_layer, name='act_prob') """
 
-        """ w_initializer, b_initializer = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
+        w_initializer, b_initializer = tf.random_normal_initializer(0., 0.03), tf.constant_initializer(0.01)
         with tf.variable_scope('eval_net'):
             # e_ue_1 = tf.layers.dense(self.tf_obs, 256, tf.nn.relu, kernel_initializer=w_initializer,
             #                      bias_initializer=b_initializer, name='e_ue_1')
@@ -105,16 +105,16 @@ class PolicyGradient:
                                           bias_initializer=b_initializer, name='q_eval')
             all_act_prob = tf.nn.softmax(all_act, name='act_prob')
             self.all_act = e_1
-            self.all_act_prob = all_act_prob """
+            self.all_act_prob = all_act_prob
         
 
         with tf.name_scope('loss'):
             # to maximize total reward (log_p * R) is to minimize -(log_p * R), and the tf only have minimize(loss)
             neg_log_prob = tf.reduce_sum(-tf.log(self.all_act_prob + 1e-10)*tf.one_hot(self.tf_acts, self.n_actions), axis=1)
             c_loss = tf.reduce_mean(neg_log_prob * self.tf_vt)  # reward guided loss
-            tf.add_to_collection("losses",c_loss)
-            loss = tf.add_n(tf.get_collection("losses"))
-            self.loss = loss
+            # tf.add_to_collection("losses",c_loss)
+            # loss = tf.add_n(tf.get_collection("losses"))
+            self.loss = c_loss
             tf.summary.scalar('loss', self.loss)
 
         with tf.name_scope('train'):
@@ -137,12 +137,12 @@ class PolicyGradient:
         discounted_ep_rs_norm = self._discount_and_norm_rewards()
         # print(discounted_ep_rs_norm)
         # train on episode
-        _, summary = self.sess.run([self.train_op, self.merge], feed_dict={
+        _, summary, cost = self.sess.run([self.train_op, self.merge, self.loss], feed_dict={
              self.tf_obs: np.vstack(self.ep_obs),  # shape=[None, n_obs]
              self.tf_acts: np.array(self.ep_as),  # shape=[None, action_length]
              self.tf_vt: discounted_ep_rs_norm,  # shape=[None, ]
         })
-        
+        print("loss: ", cost)
         self.ep_obs, self.ep_as, self.ep_rs = [], [], []    # empty episode data
         if self.output_graph:
             self.writer.add_summary(summary, self.learn_step_counter)

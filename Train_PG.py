@@ -17,10 +17,10 @@ RL = PolicyGradient(
     n_features=env.n_features,
     learning_rate=0.001,
     reward_decay=0.99,
-    output_graph=False,
+    output_graph=True,
 )
 
-for i_episode in range(100):
+for i_episode in range(1000):
     env.__init__()
     observation = env.reset()
 
@@ -39,7 +39,7 @@ for i_episode in range(100):
                 running_reward = ep_rs_sum
             else:
                 running_reward = running_reward * 0.99 + ep_rs_sum * 0.01
-            print("episode:", i_episode, "  reward:", running_reward)
+            print("episode:", i_episode, "  reward:", running_reward, " ep_rs_sum: ", ep_rs_sum)
 
             vt = RL.learn()
 
