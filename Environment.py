@@ -1,9 +1,11 @@
+#coding=utf-8
 import numpy as np
 import math
 
-REBUFF_PENALTY = 2.66
+REBUFF_PENALTY = 25
 SMOOTH_PENALTY = 0.005
 MAX_SEGMENT_COUNT = 30
+MAX_X_LIMIT = 100
 throughput_file = "sim6_cl0_throughputLog.txt"
 SegmentSize_360s_list = []
 with open("SegmentSize_360s.txt",'r') as SegmentSize_360s_readfile:
@@ -35,7 +37,7 @@ class Environment():
     def __init__(self):
         self.action_space = ['0','1','2','3','4','5','6','7','8','9']
         self.n_actions = len(self.action_space)
-        self.n_features = 3
+        self.n_features = 4
         self.segmentDuration = 1
         self.segmentcount = 0
         self.network_trace_time = DlRxPhyStats_time
@@ -48,9 +50,10 @@ class Environment():
         self.th_endtime = []
         self.rebuffer_starttime_list = []
         self.rebuffer_endtime_lsit = []
+        self.split_reward_record = [[], [], []]
         self.reward_record = []
         self.tb_count = 0
-        self.s = np.array([0.,0.,0.])
+        # self.s = np.array([0.,0.,0., 0])
 
         # log 
         self.log_data = [["segment_count", "dl_start", "dl_end", "rebuff_time", "end_buffer", "bitrate", "reward"]]
@@ -59,19 +62,20 @@ class Environment():
         self.plot_buffer_data = [0]
 
     def reset(self):
-        origin = np.array([1.05,1.0,1.]) # [throughput, bitrate, buffer]
+        origin = np.array([1.05,1.0,0., 0]) # [throughput, bitrate, buffer]
 
         return origin
 
 
-    def step(self, action):
+    def step(self, s, action):
         # s = 0
-        s_ = self.s
+        s_ = np.array([0.,0.,0., 0])
         reward = 0
+        reward_penalty = 0
         done = False
         rebuffer_time = 0
         action = int(action)
-        if self.segmentcount < len(self.video_trace[action]) and self.segmentcount < MAX_SEGMENT_COUNT-1:
+        if self.segmentcount < len(self.video_trace[action]) and self.segmentcount < MAX_SEGMENT_COUNT:
             segmentSize = self.video_trace[action][self.segmentcount]*self.segmentDuration*8
         else:
             segmentSize = 0
@@ -131,9 +135,21 @@ class Environment():
                     self.plot_buffer_data.append(next_buffer)
                 # print("not rebuff !!")
         if self.segmentcount == 0:
-            segment_reward = math.log10(action + 1) - REBUFF_PENALTY * rebuffer_time 
+            self.split_reward_record[0].append(math.log10(action + 1))
+            self.split_reward_record[1].append(-REBUFF_PENALTY * rebuffer_time)
+            self.split_reward_record[2].append(0.)
+            # segment_reward = math.log10(action + 1) - REBUFF_PENALTY * rebuffer_time
+            segment_reward = action + 1 - REBUFF_PENALTY * rebuffer_time
+            reward_penalty = - REBUFF_PENALTY * rebuffer_time
         else:
-            segment_reward = math.log10(action + 1) - REBUFF_PENALTY * rebuffer_time  - SMOOTH_PENALTY * abs(action + 1 - self.bitrate_record[-1]/1e7)
+            self.split_reward_record[0].append(action + 1)
+            self.split_reward_record[1].append(-REBUFF_PENALTY * rebuffer_time)
+            self.split_reward_record[2].append(- SMOOTH_PENALTY * abs(action + 1 - self.bitrate_record[-1]/1e7))
+            # segment_reward = math.log10(action + 1) - REBUFF_PENALTY * rebuffer_time  - SMOOTH_PENALTY * abs(action + 1 - self.bitrate_record[-1]/1e7)
+            segment_reward = action + 1 - REBUFF_PENALTY * rebuffer_time - SMOOTH_PENALTY * abs(
+                action + 1 - self.bitrate_record[-1] / 1e7)
+            reward_penalty = - REBUFF_PENALTY * rebuffer_time - SMOOTH_PENALTY * abs(
+                action + 1 - self.bitrate_record[-1] / 1e7)
         # segment_reward -= 10
         self.reward_record.append(segment_reward)
 
@@ -158,7 +174,7 @@ class Environment():
         #         done = True
         reward = segment_reward
 
-        if segmentSize == 0 or next_tb_count >= len(self.network_trace_time):
+        if self.segmentcount >= MAX_SEGMENT_COUNT - 1 or next_tb_count >= len(self.network_trace_time):
             done = True
         else:
             self.record(action,next_buffer,segmentSize,downloadEnd-downloadStart,downloadEnd)
@@ -166,11 +182,12 @@ class Environment():
         s_[0] = self.segmentsize_list[-1]/self.segment_dltime_list[-1]/1e7
         s_[1] = (action + 1)
         s_[2] = next_buffer
+        s_[3] = self.segmentcount + 1
         self.segmentcount += 1
-        self.s = s_
+        # self.s = s_
         self.tb_count = next_tb_count
 
-        return s_, reward, done
+        return s_, reward, done, reward_penalty
 
     def record(self, bitrate, buffer, segmentsize, downloadtime, downloadEnd):
         self.bitrate_record.append((bitrate+1)*1e7)
@@ -185,7 +202,7 @@ class Environment():
         interval = 0.5 #10*1000
         segmentstart = 0
         timetemp = 0
-        #--------------------------------------------------
+        # --------------------------------------------------
         with open(throughput_file, 'r') as phyrate_to_read:
             n=0
             while True:
@@ -230,7 +247,7 @@ class Environment():
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
         plt.ylim(0,150000000)
-        plt.xlim(0,50)
+        plt.xlim(0,MAX_X_LIMIT)
         handlesa,labelsa = c.get_legend_handles_labels()
         c.legend(handlesa[::-1],labelsa[::-1],fontsize=20)
         plt.savefig("Throughput.png")
@@ -247,7 +264,7 @@ class Environment():
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
         plt.ylim(0,5)
-        plt.xlim(0,50)
+        plt.xlim(0,MAX_X_LIMIT)
         handlesa,labelsa = c.get_legend_handles_labels()
         c.legend(handlesa[::-1],labelsa[::-1],fontsize=20)
         plt.savefig("buffer.png")
@@ -261,18 +278,25 @@ class Environment():
         print("final qoe: ", sum(self.reward_record))
         print("played segment number: ", len(self.reward_record))
         print("average qoe: ", sum(self.reward_record)/len(self.reward_record))
+        print("bitrate reward: %s rebuff reward: %s smooth reward: %s" % (sum(self.split_reward_record[0]),
+                                                                          sum(self.split_reward_record[1]),
+                                                                          sum(self.split_reward_record[2])))
 
 if __name__ == "__main__":
     env = Environment()
-    action = 6
-    s_, reward, done = env.step(action)
+    s = env.reset()
+    action = 8
+    s_, reward, done, reward_penalty = env.step(s, action)
     while not done:
         # print(done)
-        s_, reward, done = env.step(action)
+        s_, reward, done, reward_penalty = env.step(s, action)
+        s = s_
         # print(s_, reward, done)
-    # env.th_plot()
-    # env.buffer_plot()
+    env.th_plot()
+    env.buffer_plot()
     # print(env.plot_buffer_time)
     # print(env.plot_buffer_data)
     # print(env.segment_dltime_list)
-    # env.log_output()
+    env.log_output()
+    bitrate_list = [i / 1e7 for i in env.bitrate_record]
+    print(bitrate_list)

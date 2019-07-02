@@ -122,7 +122,7 @@ class PolicyGradient:
 
     def choose_action(self, observation):
         prob_weights = self.sess.run(self.all_act_prob, feed_dict={self.tf_obs: observation[np.newaxis, :]})
-        # print(test_var)
+        # print(prob_weights)
         action = np.random.choice(range(prob_weights.shape[1]), p=prob_weights.ravel())  # select action w.r.t the actions prob
         # print(observation, action)
         return action
@@ -135,7 +135,7 @@ class PolicyGradient:
     def learn(self):
         # discount and normalize episode reward
         discounted_ep_rs_norm = self._discount_and_norm_rewards()
-        # print(discounted_ep_rs_norm)
+        print(discounted_ep_rs_norm)
         # train on episode
         _, summary, cost = self.sess.run([self.train_op, self.merge, self.loss], feed_dict={
              self.tf_obs: np.vstack(self.ep_obs),  # shape=[None, n_obs]

@@ -13,7 +13,7 @@ def Test():
         # bitrate = 9
         bitrate = Tomato(observation[0], observation[1], observation[2])
         
-        observation_, reward, done = env.step(bitrate)
+        observation_, reward, done, r_penalty = env.step(observation, bitrate)
 
         observation = observation_
 
@@ -23,7 +23,8 @@ def Test():
     env.th_plot()
     env.buffer_plot()
     env.log_output()
-    print([i/1e7 for i in env.bitrate_record])
+    bitrate_list = [i / 1e7 for i in env.bitrate_record]
+    print(bitrate_list)
     # print(env.reward_record)
 
 if __name__ == "__main__":

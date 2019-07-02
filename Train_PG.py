@@ -15,12 +15,12 @@ env = Environment()
 RL = PolicyGradient(
     n_actions=env.n_actions,
     n_features=env.n_features,
-    learning_rate=0.001,
+    learning_rate=0.01,
     reward_decay=0.99,
     output_graph=True,
 )
 
-for i_episode in range(1000):
+for i_episode in range(100):
     env.__init__()
     observation = env.reset()
 
@@ -49,6 +49,7 @@ for i_episode in range(1000):
         observation = observation_
     
     env.log_output()
-    print([i/1e7 for i in env.bitrate_record])
+    bitrate_list = [i / 1e7 for i in env.bitrate_record]
+    print(bitrate_list)
 env.th_plot()
 env.buffer_plot()
